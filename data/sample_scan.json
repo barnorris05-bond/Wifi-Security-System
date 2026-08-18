@@ -1,0 +1,6 @@
+[
+  {"ssid": "Corporate_HQ_5G", "bssid": "00:11:22:33:44:55", "channel": 36, "frequency_mhz": 5180.0, "band": "5 GHz", "signal_dbm": -42, "signal_percent": 100, "encryption": "WPA3", "authentication": "ENTERPRISE"},
+  {"ssid": "Guest_Coffee_Shop", "bssid": "AA:BB:CC:11:22:33", "channel": 6, "frequency_mhz": 2437.0, "band": "2.4 GHz", "signal_dbm": -68, "signal_percent": 64, "encryption": "OPEN", "authentication": "NONE"},
+  {"ssid": "Legacy_POS_Terminal", "bssid": "DE:AD:BE:EF:00:01", "channel": 1, "frequency_mhz": 2412.0, "band": "2.4 GHz", "signal_dbm": -82, "signal_percent": 36, "encryption": "WEP", "authentication": "PERSONAL"},
+  {"ssid": "Residential_Net", "bssid": "12:34:56:78:9A:BC", "channel": 149, "frequency_mhz": 5745.0, "band": "5 GHz", "signal_dbm": -55, "signal_percent": 90, "encryption": "WPA2", "authentication": "PERSONAL"}
+]
