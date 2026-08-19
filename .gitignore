@@ -1,5 +1,9 @@
-venv/
-data/*.db
+﻿venv/
+.env
 __pycache__/
 *.pyc
 .pytest_cache/
+data/*.db
+logs/*
+!logs/.gitkeep
+reports/*.pdf
