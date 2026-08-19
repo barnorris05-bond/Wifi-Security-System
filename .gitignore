@@ -1,28 +1,5 @@
-# Python
-__pycache__/
-*.py[cod]
-.pytest_cache/
-
-# Virtual environments
 venv/
-.venv/
-
-# Environment variables
-.env
-
-# SQLite databases
 data/*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-logs/*
-!logs/.gitkeep
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
+__pycache__/
+*.pyc
+.pytest_cache/
