@@ -1,7 +1,9 @@
 import re
 from typing import List
+
 from models.network import NetworkModel
-from scanner.parsers.base_parser import BaseParser
+from scanner.parsers.base_parser import BaseParser, HIDDEN_SSID
+
 
 class NMCLIParser(BaseParser):
     @staticmethod
@@ -28,14 +30,16 @@ class NMCLIParser(BaseParser):
                 continue
             parts = self._split_escaped(line, ':')
             if len(parts) < 6:
+                self.warn(f"Skipping malformed nmcli entry: {line!r}")
                 continue
 
             bssid = parts[0].strip().upper()
-            ssid = parts[1].strip() or "<Hidden SSID>"
-            try:
-                channel = int(parts[2].strip())
-            except ValueError:
-                channel = 0
+            if not bssid:
+                self.warn("Encountered nmcli network without BSSID; skipping entry.")
+                continue
+
+            ssid = parts[1].strip() or HIDDEN_SSID
+            channel = self.safe_int(parts[2].strip(), default=0)
 
             freq_match = re.search(r'(\d+)', parts[3].strip())
             freq_mhz = float(freq_match.group(1)) if freq_match else 0.0
@@ -49,11 +53,7 @@ class NMCLIParser(BaseParser):
             else:
                 band = "Unknown"
 
-            try:
-                signal_percent = int(parts[4].strip())
-            except ValueError:
-                signal_percent = 0
-
+            signal_percent = self.safe_int(parts[4].strip(), default=0)
             signal_dbm = int((signal_percent / 2) - 100)
             sec_raw = parts[5].strip().upper()
 

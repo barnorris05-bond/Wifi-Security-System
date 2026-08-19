@@ -1,7 +1,9 @@
 import re
 from typing import List
+
 from models.network import NetworkModel
-from scanner.parsers.base_parser import BaseParser
+from scanner.parsers.base_parser import BaseParser, HIDDEN_SSID
+
 
 class IWParser(BaseParser):
     def parse(self, raw_output: str) -> List[NetworkModel]:
@@ -15,7 +17,7 @@ class IWParser(BaseParser):
 
             bssid = bssid_match.group(1).upper()
             ssid_match = re.search(r'SSID:\s*(.*)', block)
-            ssid = ssid_match.group(1).strip() if ssid_match and ssid_match.group(1).strip() else "<Hidden SSID>"
+            ssid = ssid_match.group(1).strip() if ssid_match and ssid_match.group(1).strip() else HIDDEN_SSID
 
             freq_match = re.search(r'freq:\s*([\d.]+)', block)
             freq_mhz = float(freq_match.group(1)) if freq_match else 0.0
