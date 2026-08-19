@@ -1,7 +1,20 @@
+"""Security assessment helpers.
+
+The scoring used here is intentionally heuristic and project-specific, not an
+industry-standard Wi-Fi security rating. It is intended for teaching/demo use.
+"""
+
 from typing import List
+
+from config.risk_rules import AUTHENTICATION_WEIGHTS, ENCRYPTION_WEIGHTS, RISK_LEVEL_THRESHOLDS
+from models.assessment import Finding, SecurityAssessment
 from models.network import NetworkModel
-from models.assessment import SecurityAssessment, Finding
-from config.risk_rules import ENCRYPTION_WEIGHTS, AUTHENTICATION_WEIGHTS, RISK_LEVEL_THRESHOLDS
+
+HEURISTIC_RISK_NOTE = (
+    "Risk scores are heuristic project estimates for demonstration and learning, "
+    "not formal security certifications or vendor-grade ratings."
+)
+
 
 class SecurityAnalyzer:
     @classmethod

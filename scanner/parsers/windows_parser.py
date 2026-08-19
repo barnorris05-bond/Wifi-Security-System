@@ -1,7 +1,10 @@
 import re
 from typing import List
+
+from analyzer.frequency import BandResolver
 from models.network import NetworkModel
-from scanner.parsers.base_parser import BaseParser
+from scanner.parsers.base_parser import BaseParser, HIDDEN_SSID
+
 
 class WindowsNetshParser(BaseParser):
     def parse(self, raw_output: str) -> List[NetworkModel]:
@@ -14,10 +17,7 @@ class WindowsNetshParser(BaseParser):
                 continue
 
             raw_ssid = ssid_match.group(1).strip()
-            if not raw_ssid or "Network type" in raw_ssid:
-                ssid = "<Hidden SSID>"
-            else:
-                ssid = raw_ssid
+            ssid = raw_ssid if raw_ssid and "Network type" not in raw_ssid else HIDDEN_SSID
 
             auth_match = re.search(r'Authentication\s+:\s*([^\r\n]*)', block)
             enc_match = re.search(r'Encryption\s+:\s*([^\r\n]*)', block)
@@ -38,16 +38,8 @@ class WindowsNetshParser(BaseParser):
 
                 chan_match = re.search(r'Channel\s+:\s*(\d+)', b_block)
                 channel = int(chan_match.group(1)) if chan_match else 0
-
-                if 1 <= channel <= 14:
-                    freq_mhz = 2407.0 + (channel * 5.0) if channel != 14 else 2484.0
-                    band = "2.4 GHz"
-                elif 36 <= channel <= 177:
-                    freq_mhz = 5000.0 + (channel * 5.0)
-                    band = "5 GHz"
-                else:
-                    freq_mhz = 0.0
-                    band = "Unknown"
+                band = BandResolver.resolve_band(channel=channel)
+                freq_mhz = BandResolver.resolve_frequency(channel=channel, band=band)
 
                 encryption = "OPEN"
                 authentication = "NONE"
