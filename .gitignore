@@ -7,3 +7,5 @@ data/*.db
 logs/*
 !logs/.gitkeep
 reports/*.pdf
+
+.env
