@@ -1,54 +1,43 @@
-from __future__ import annotations
+﻿from dataclasses import dataclass
 
-from typing import Optional
+@dataclass
+class BandInfo:
+    frequency_mhz: float
+    band: str
 
-
-class BandResolver:
-    """Resolve Wi-Fi frequency bands from either a channel or a frequency value."""
-
+class FrequencyResolver:
     @staticmethod
-    def resolve_band(channel: Optional[int] = None, frequency_mhz: Optional[float] = None) -> str:
-        if frequency_mhz is not None:
-            if 2400 <= frequency_mhz <= 2500:
-                return "2.4 GHz"
-            if 4900 <= frequency_mhz <= 5899:
-                return "5 GHz"
-            if 5900 <= frequency_mhz <= 7115:
-                return "6 GHz"
-            return "Unknown"
-
-        if channel is None:
-            return "Unknown"
-
-        if 1 <= channel <= 14:
+    def resolve_from_frequency(freq_mhz: float) -> str:
+        if 2400 <= freq_mhz <= 2500:
             return "2.4 GHz"
-        if 36 <= channel <= 177:
+        elif 4900 <= freq_mhz <= 5899:
             return "5 GHz"
-        if 1 <= channel <= 233:
+        elif 5925 <= freq_mhz <= 7125:
             return "6 GHz"
         return "Unknown"
 
     @staticmethod
-    def resolve_frequency(channel: Optional[int] = None, band: Optional[str] = None) -> float:
-        if channel is None:
-            return 0.0
+    def resolve_from_channel(channel: int) -> BandInfo:
+        if 1 <= channel <= 14:
+            freq = 2407.0 + (channel * 5.0) if channel != 14 else 2484.0
+            return BandInfo(freq, "2.4 GHz")
+        elif 36 <= channel <= 177:
+            freq = 5000.0 + (channel * 5.0)
+            return BandInfo(freq, "5 GHz")
+        elif 1 <= channel <= 233 and (channel - 1) % 4 == 0:
+            freq = 5950.0 + (channel * 5.0)
+            return BandInfo(freq, "6 GHz")
+        return BandInfo(0.0, "Unknown")
 
-        normalized = (band or BandResolver.resolve_band(channel=channel)).upper()
-        if "2.4" in normalized:
-            return 2407.0 + (channel * 5.0) if channel != 14 else 2484.0
-        if "5" in normalized:
-            return 5000.0 + (channel * 5.0)
-        if "6" in normalized:
-            return 5955.0 + ((channel - 1) * 20.0)
-        return 0.0
+    @classmethod
+    def resolve_band(cls, channel: int = 0, frequency_mhz: float = 0.0) -> str:
+        if frequency_mhz > 0:
+            return cls.resolve_from_frequency(frequency_mhz)
+        return cls.resolve_from_channel(channel).band
 
+    @classmethod
+    def resolve_frequency(cls, channel: int = 0, band: str = "") -> float:
+        return cls.resolve_from_channel(channel).frequency_mhz
 
-class FrequencyAnalyzer:
-    @staticmethod
-    def summarize_by_band(networks):
-        summary = {"2.4 GHz": 0, "5 GHz": 0, "6 GHz": 0, "Unknown": 0}
-        for net in networks:
-            band = BandResolver.resolve_band(net.channel, net.frequency_mhz)
-            summary.setdefault(band, 0)
-            summary[band] += 1
-        return summary
+# Backward compatibility alias
+BandResolver = FrequencyResolver
