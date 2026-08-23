@@ -1,74 +1,53 @@
 ﻿import streamlit as st
-import pandas as pd
-from reports.pdf_report import generate_pdf_report
-from reports.csv_export import generate_csv_report
-from reports.json_export import generate_json_report
+from analyzer.ai_assistant import NemotronAnalyzer
 
-def render_networks_tab(scan_session):
-    st.header("Detected Networks")
-    if not scan_session or not scan_session.networks:
-        st.info("No network records found.")
-        return
-
-    data = []
-    for n in scan_session.networks:
-        asm = scan_session.assessments.get(n.bssid)
-        data.append({
-            "SSID": n.ssid,
-            "BSSID": n.bssid,
-            "Channel": n.channel,
-            "Frequency": f"{n.frequency_mhz} MHz",
-            "Band": n.band,
-            "Signal (dBm)": n.signal_dbm,
-            "Encryption": n.encryption,
-            "Authentication": n.authentication,
-            "Risk Level": asm.risk_level if asm else "UNKNOWN",
-            "Risk Score": asm.risk_score if asm else 0
-        })
-
-    df = pd.DataFrame(data)
+def render_network_details(df):
+    st.title("Detected Networks")
+    
+    # Render main table
     st.dataframe(df, use_container_width=True)
 
     st.subheader("Export Security Reports")
     col1, col2, col3 = st.columns(3)
-    with col1:
-        pdf_bytes = generate_pdf_report(scan_session)
-        st.download_button("PDF Report", data=pdf_bytes, file_name=f"wifi_report_{scan_session.scan_id}.pdf", mime="application/pdf", type="secondary")
-    with col2:
-        csv_data = generate_csv_report(scan_session)
-        st.download_button("CSV Data", data=csv_data, file_name=f"wifi_data_{scan_session.scan_id}.csv", mime="text/csv", type="secondary")
-    with col3:
-        json_data = generate_json_report(scan_session)
-        st.download_button("JSON Export", data=json_data, file_name=f"wifi_session_{scan_session.scan_id}.json", mime="application/json", type="secondary")
+    col1.button("PDF Report")
+    col2.button("CSV Data")
+    col3.button("JSON Export")
 
     st.divider()
+
     st.subheader("Detailed Security Assessment")
+    
+    # Dropdown for network selection
+    options = [f"{row['BSSID']} - {row['SSID']}" for _, row in df.iterrows()]
+    selected_option = st.selectbox("Select Network BSSID for In-Depth Risk Findings:", options)
+    
+    if selected_option:
+        # Extract selected network row
+        selected_bssid = selected_option.split(" - ")[0]
+        net_data = df[df['BSSID'] == selected_bssid].iloc[0]
 
-    selected_bssid = st.selectbox(
-        "Select Network BSSID for In-Depth Risk Findings:",
-        options=[n.bssid for n in scan_session.networks],
-        format_func=lambda x: f"{x} - {[n.ssid for n in scan_session.networks if n.bssid == x][0]}"
-    )
+        # Display basic metric cards
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Risk Score", f"{net_data['Risk Score']} / 100")
+        m2.metric("Risk Level", net_data['Risk Level'])
+        m3.metric("Security Status", "SECURE" if net_data['Risk Score'] < 30 else "VULNERABLE")
 
-    if selected_bssid:
-        net = next((n for n in scan_session.networks if n.bssid == selected_bssid), None)
-        asm = scan_session.assessments.get(selected_bssid)
+        st.markdown("### 🤖 Nemotron AI Analysis")
+        
+        # Select execution mode (Local Ollama vs NVIDIA Cloud API)
+        provider = st.radio("AI Engine:", ["Local (Ollama 4B)", "Cloud (NVIDIA API)"], horizontal=True)
+        mode = "local" if "Local" in provider else "cloud"
 
-        if net and asm:
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Risk Score", f"{asm.risk_score} / 100")
-            with col2:
-                st.metric("Risk Level", asm.risk_level)
-            with col3:
-                st.metric("Security Status", asm.security_level)
-
-            st.markdown("#### Security Findings & Recommendations")
-            if asm.findings:
-                for f in asm.findings:
-                    severity_color = "CRITICAL" if f.severity in ["CRITICAL", "HIGH"] else "MEDIUM" if f.severity == "MEDIUM" else "INFO"
-                    with st.expander(f"[{severity_color}] {f.severity}: {f.title}"):
-                        st.write(f"**Description:** {f.description}")
-                        st.write(f"**Recommendation:** {f.recommendation}")
-            else:
-                st.success("No security findings detected for this network.")
+        if st.button("Run AI Risk Audit"):
+            with st.spinner("Nemotron is analyzing network parameters..."):
+                try:
+                    analyzer = NemotronAnalyzer(mode=mode)
+                    report = analyzer.analyze_network_security(
+                        ssid=str(net_data['SSID']),
+                        security_type=f"{net_data['Encryption']} / {net_data['Authentication']}",
+                        signal_dbm=int(net_data['Signal (dBm)']),
+                        channel=int(net_data['Channel'])
+                    )
+                    st.info(report)
+                except Exception as e:
+                    st.error(f"Analysis Error: {e}")

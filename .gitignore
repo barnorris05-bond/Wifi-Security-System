@@ -9,3 +9,9 @@ logs/*
 reports/*.pdf
 
 .env
+
+# Environment variables & local databases
+.env
+*.db
+*.sqlite3
+__pycache__/
